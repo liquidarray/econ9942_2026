@@ -1,0 +1,21 @@
+{{ block title }}
+    Round {{ player.round_number }} of {{ C.NUM_ROUNDS }}
+{{ endblock }}
+
+{{ block content }}
+    <!-- Anchored Scoreboard -->
+    <div class="card mb-4">
+        <div class="card-body text-center bg-light">
+            <h5 class="text-muted">Score</h5>
+            <h4>You: <strong>{{ human_total }}</strong> | Computer: <strong>{{ computer_total }}</strong></h4>
+        </div>
+    </div>
+
+    <p>A win earns 1 point. A tie or loss earns 0 points.</p>
+
+    {{ formfields }}
+
+    <div class="mt-4 d-flex justify-content-center">
+    {{ next_button }}
+</div>
+{{ endblock }}

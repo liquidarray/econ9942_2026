@@ -1,0 +1,33 @@
+{{ block title }}
+    Round {{ player.round_number }} of {{ C.NUM_ROUNDS }} - Results
+{{ endblock }}
+
+{{ block content }}
+    <!-- Anchored Scoreboard (Matches Decision page perfectly) -->
+    <div class="card mb-4">
+        <div class="card-body text-center bg-light">
+            <h5 class="text-muted">Score</h5>
+            <h4>You: <strong>{{ human_total }}</strong> | Computer: <strong>{{ computer_total }}</strong></h4>
+        </div>
+    </div>
+
+    <table class="table text-center mb-4">
+        <thead class="table-light">
+            <tr>
+                <th>Your Choice</th>
+                <th>Computer's Choice</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ player.player_choice }}</td>
+                <td>{{ player.computer_choice }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+<div class="mt-4 d-flex justify-content-center">
+    {{ next_button }}
+</div>
+
+{{ endblock }}
