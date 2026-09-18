@@ -1,0 +1,51 @@
+{% extends "global/Page.html" %}
+
+{% block title %}
+    Input Example with Buttons and Text Feedback
+{% endblock %}
+{% block content %}
+
+    {#           NOTE: NOT USING {% formfields %}                   #}
+
+    <input type="hidden" name="G" id="response" />
+
+
+
+    <button type="button" id="btn_1" class="btn btn-primary">Apple</button>
+    <button type="button" id="btn_2" class="btn btn-primary">Banana</button>
+    <button type="button" id="btn_3" class="btn btn-primary">Cranberry</button>
+
+    <br><br>
+
+    <p>
+    You have selected: <span id="my_selection">NULL</span>
+    </p>
+
+    <br><br>
+    <button class="otree-btn-next btn btn-primary">Submit</button>
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        $(document).ready(function() {
+
+            $("#btn_1").click(function(){
+                // sets hidden field ; this is what is passed back to otree
+                $("#response").val("1");
+                // sets span element containing action label
+                $("#my_selection").text("Apple")
+            });
+
+            $("#btn_2").click(function(){
+                $("#response").val("2");
+                $("#my_selection").text("Banana")
+            });
+
+            $("#btn_3").click(function(){
+                $("#response").val("3");
+                $("#my_selection").text("Cranberry")
+            });
+        });
+    </script>
+{% endblock %}

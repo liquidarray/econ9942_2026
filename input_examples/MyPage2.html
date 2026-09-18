@@ -1,0 +1,20 @@
+{% extends "global/Page.html" %}
+
+{% block title %}
+    Input Example with Buttons
+{% endblock %}
+{% block content %}
+
+    {#           NOTE: NOT USING {% formfields %}                   #}
+
+    <input type="hidden" name="F" id="response" />
+
+    <button type="button" id="btn_1" onclick="document.getElementById('response').value = '1'" class="btn btn-primary">Apple</button>
+    <button type="button" id="btn_2" onclick="document.getElementById('response').value = '2'" class="btn btn-primary">Banana</button>
+    <button type="button" id="btn_3" onclick="document.getElementById('response').value = '3'" class="btn btn-primary">Cranberry</button>
+
+
+    <br><br>
+    {% next_button %}
+
+{% endblock %}
