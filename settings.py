@@ -3,17 +3,18 @@ from os import environ
 
 SESSION_CONFIGS = [
     dict(
-        name='rps_tournament',
-        display_name="Rock-Paper-Scissors Tournament",
-        app_sequence=['rps'],
-        num_demo_participants=1, # 1 because it's human vs. computer
-    ),
-    dict(
         name='input_examples',
         display_name='examples of different inputs',
         num_demo_participants=1,
         app_sequence=['input_examples'],
     ),
+    dict(
+        name='rps_tournament',
+        display_name="Rock-Paper-Scissors Tournament",
+        app_sequence=['rps'],
+        num_demo_participants=1, # 1 because it's human vs. computer
+    ),
+
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
