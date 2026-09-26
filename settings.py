@@ -3,6 +3,12 @@ from os import environ
 
 SESSION_CONFIGS = [
     dict(
+        name='public_goods_game',
+        display_name='VCM Public Goods Game',
+        num_demo_participants=3,
+        app_sequence=['my_pubgoods'],
+    ),
+    dict(
         name='input_examples',
         display_name='examples of different inputs',
         num_demo_participants=1,
@@ -14,7 +20,6 @@ SESSION_CONFIGS = [
         app_sequence=['rps'],
         num_demo_participants=1, # 1 because it's human vs. computer
     ),
-
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs

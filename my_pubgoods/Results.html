@@ -1,0 +1,28 @@
+{# extends "global/Page.html" #}
+
+{{ block title }}
+    Results -- Round {{ subsession.round_number }} of {{ C.NUM_ROUNDS }}
+{{ endblock }}
+
+{{ block content }}
+
+    <pre>
+        My Endowment Kept:       {{ endowment_kept }}
+        My Contribution:         {{ player.contribution }}
+        Group Total:             {{ group.total_contribution }}
+        Group size:              {{ C.PLAYERS_PER_GROUP }}
+        MPCR:                    {{ C.MPCR }}
+        My Return:               {{ group.individual_share }}
+        My Payoff:               {{ player.payoff }}
+    </pre>
+
+    <h4>History:</h4>
+    <pre>
+        {{ for p in past_rounds }}
+            Round: {{ p.round_number }}     My Contribution: {{ p.contribution }}     Group Total: {{ p.group.total_contribution }}     My Payoff: {{ p.payoff }}
+        {{ endfor }}
+    </pre>
+
+    {{ next_button }}
+
+{{ endblock }}
