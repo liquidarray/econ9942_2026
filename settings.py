@@ -5,7 +5,7 @@ SESSION_CONFIGS = [
     dict(
         name='public_goods_game',
         display_name='VCM Public Goods Game',
-        num_demo_participants=3,
+        num_demo_participants=6,
         app_sequence=['my_pubgoods'],
     ),
     dict(
@@ -41,6 +41,7 @@ LANGUAGE_CODE = 'en'
 # e.g. EUR, GBP, CNY, JPY
 REAL_WORLD_CURRENCY_CODE = 'USD'
 USE_POINTS = True
+POINTS_DECIMAL_PLACES = 2
 
 ROOMS = [
     dict(
