@@ -1,25 +1,91 @@
-{# extends "global/Page.html" #}
-
 {{ block title }}
-    Contribute -- Round {{ subsession.round_number }} of {{ C.NUM_ROUNDS }}
+    Round {{ subsession.round_number }} of {{ C.NUM_ROUNDS }} Decision
+{{ endblock }}
+
+{{ block styles }}
+<style>
+    .instructions-toggle::after {
+        content: ' \25BC'; /* Downward triangle */
+    }
+    .instructions-toggle[aria-expanded="true"]::after {
+        content: ' \25B2'; /* Upward triangle */
+    }
+</style>
 {{ endblock }}
 
 {{ block content }}
-    <pre>
-        My Player ID in Group:  {{ player.id_in_group }}
-        Group size:             {{ C.PLAYERS_PER_GROUP }}
-        My Endowment:           {{ C.ENDOWMENT }}
-        MPCR:                   {{ C.MPCR }}
-    </pre>
 
-    {{ formfields }}
+    <div class="m-3">
+        <button class="btn btn-outline-secondary btn-sm instructions-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#instructionsCollapse" aria-expanded="false" aria-controls="instructionsCollapse">
+            Instructions
+        </button>
+        <div class="collapse" id="instructionsCollapse">
+            <div class="card card-body mt-2">
+                <i>Instructions to go here.</i>
+            </div>
+        </div>
+    </div>
 
-    <h4>History:</h4>
-    <pre>
-        {{ for p in past_rounds }}
-            Round: {{ p.round_number }}     My Contribution: {{ p.contribution }}     Group Total: {{ p.group.total_contribution }}     My Payoff: {{ p.payoff }}
-        {{ endfor }}
-    </pre>
+    <div class="card bg-light m-3">
+        <div class="card-body text-center">
+            Accrued earnings: <strong>{{ cumulative_payoff }}</strong>
+        </div>
+    </div>
 
-    {{ next_button }}
+    <div class="card bg-light m-3">
+        <div class="card-body">
+            <table class="table table-sm">
+                <tr>
+                    <td>Your Endowment:</td>
+                    <td><strong>{{ C.ENDOWMENT }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Group Size:</td>
+                    <td><strong>{{ C.PLAYERS_PER_GROUP }} (including you)</strong></td>
+                </tr>
+                <tr>
+                    <td>The public account multiplier:</td>
+                    <td><strong>{{ group.mpcr }}</strong></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+
+    <div class="m-3">
+        {{ formfields }}
+    </div>
+
+    <div class="m-3">
+        {{ next_button }}
+    </div>
+
+    {% if past_rounds %}
+    <div class="card m-3">
+        <div class="card-body">
+            <h5 class="card-title">Previous Rounds History</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Round</th>
+                        <th>Your Contribution</th>
+                        <th>Group Total</th>
+                        <th>Your Payoff</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in past_rounds %}
+                        <tr>
+                            <td>{{ p.round_number }}</td>
+                            <td>{{ p.contribution }}</td>
+                            <td>{{ p.group.total_contribution }}</td>
+                            <td>{{ p.payoff }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
 {{ endblock }}

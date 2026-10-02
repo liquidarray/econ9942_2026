@@ -1,0 +1,54 @@
+{{ block title }}
+    Experiment complete
+{{ endblock }}
+
+{{ block content }}
+    <div class="card bg-light m-3">
+        <div class="card-body text-center">
+            <p class="lead">
+                You have earned a total of <strong>{{ participant.payoff }}</strong> in this experiment, 
+                which translates into <strong>{{ total_cash }}</strong>.
+            </p>
+            <p>
+                Please wait silently until we call your seat number and then proceed with your belongings 
+                to the payment window at the back of the lab. You may now use an electronic device.
+            </p>
+        </div>
+    </div>
+
+    <div class="card m-3">
+        <div class="card-body">
+            <h5 class="card-title">Full History</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Round</th>
+                        <th>The public account multiplier</th>
+                        <th>Your Contribution</th>
+                        <th>Public account balance</th>
+                        <th>Your payoff</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in past_rounds %}
+                        <tr>
+                            <td>{{ p.round_number }}</td>
+                            <td>{{ p.group.mpcr }}</td>
+                            <td>{{ p.contribution }}</td>
+                            <td>{{ p.group.total_contribution }}</td>
+                            <td>{{ p.payoff }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot style="border-top: 1px solid currentColor;">
+                    <tr>
+                        <td><strong>ALL</strong></td>
+                        <td colspan="3"></td>
+                        <td><strong>{{ cumulative_payoff }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+{{ endblock }}

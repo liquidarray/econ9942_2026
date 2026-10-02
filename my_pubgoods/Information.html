@@ -1,0 +1,60 @@
+{{ block title }}
+    Information
+{{ endblock }}
+
+{{ block styles }}
+<style>
+    .instructions-toggle::after {
+        content: ' \25BC'; /* Downward triangle */
+    }
+    .instructions-toggle[aria-expanded="true"]::after {
+        content: ' \25B2'; /* Upward triangle */
+    }
+</style>
+{{ endblock }}
+
+{{ block content }}
+
+    <div class="m-3">
+        <button class="btn btn-outline-secondary btn-sm instructions-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#instructionsCollapse" aria-expanded="false" aria-controls="instructionsCollapse">
+            Instructions
+        </button>
+        <div class="collapse" id="instructionsCollapse">
+            <div class="card card-body mt-2">
+                <i>Instructions to go here.</i>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-light m-3">
+        <div class="card-body">
+
+            <p class="card-text">
+                {% if subsession.round_number == 1 %}
+                You have been randomly grouped with {{ other_players }} other players.
+                You will stay grouped with these same players for the next <strong>{{ rounds_remaining }}</strong> rounds.
+                {% else %}
+                You have now been <strong>randomly regrouped</strong> with {{ other_players }} other players to form a <strong>new</strong> group.
+                You will stay grouped with these same players for the next <strong>{{ rounds_remaining }}</strong> rounds.
+                {% endif %}
+            </p>
+
+            <p class="card-text">
+                The public account multiplier is <strong>{{ group.mpcr }}</strong>.
+            </p>
+        </div>
+    </div>
+
+    {% if subsession.round_number > 1 %}
+    <div class="card bg-light m-3">
+        <div class="card-body">
+            Accrued earnings: <strong>{{ cumulative_payoff }}</strong>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="m-3 text-center">
+        {{ next_button }}
+    </div>
+
+{{ endblock }}

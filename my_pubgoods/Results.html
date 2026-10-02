@@ -1,28 +1,106 @@
-{# extends "global/Page.html" #}
-
 {{ block title }}
-    Results -- Round {{ subsession.round_number }} of {{ C.NUM_ROUNDS }}
+    Round {{ subsession.round_number }} of {{ C.NUM_ROUNDS }} Results
+{{ endblock }}
+
+{{ block styles }}
+<style>
+    .instructions-toggle::after {
+        content: ' \25BC'; /* Downward triangle */
+    }
+    .instructions-toggle[aria-expanded="true"]::after {
+        content: ' \25B2'; /* Upward triangle */
+    }
+</style>
 {{ endblock }}
 
 {{ block content }}
 
-    <pre>
-        My Endowment Kept:       {{ endowment_kept }}
-        My Contribution:         {{ player.contribution }}
-        Group Total:             {{ group.total_contribution }}
-        Group size:              {{ C.PLAYERS_PER_GROUP }}
-        MPCR:                    {{ C.MPCR }}
-        My Return:               {{ group.individual_share }}
-        My Payoff:               {{ player.payoff }}
-    </pre>
+    <div class="m-3">
+        <button class="btn btn-outline-secondary btn-sm instructions-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#instructionsCollapse" aria-expanded="false" aria-controls="instructionsCollapse">
+            Instructions
+        </button>
+        <div class="collapse" id="instructionsCollapse">
+            <div class="card card-body mt-2">
+                <i>Instructions to go here.</i>
+            </div>
+        </div>
+    </div>
 
-    <h4>History:</h4>
-    <pre>
-        {{ for p in past_rounds }}
-            Round: {{ p.round_number }}     My Contribution: {{ p.contribution }}     Group Total: {{ p.group.total_contribution }}     My Payoff: {{ p.payoff }}
-        {{ endfor }}
-    </pre>
+    <div class="card bg-light m-3">
+        <div class="card-body">
+            <h5 class="card-title">Round Summary</h5>
+            <table class="table">
+                <tr>
+                    <td>Private account balance:</td>
+                    <td>{{ endowment_kept }}</td>
+                </tr>
+                <tr>
+                    <td>Total group account contributions:</td>
+                    <td>{{ group.total_contribution }}</td>
+                </tr>
+                <tr>
+                    <td>Group account multiplier:</td>
+                    <td>{{ marginal_return }}</td>
+                </tr>
+                <tr>
+                    <td>Total group account payout:</td>
+                    <td>{{ group_account_payout }}</td>
+                </tr>
+                <tr>
+                    <td>Your share of the group account payout:</td>
+                    <td>{{ group.individual_share }}</td>
+                </tr>
+                <tr class="table-success">
+                    <td><strong>Your round payoff:</strong></td>
+                    <td><strong>{{ player.payoff }}</strong></td>
+                </tr>
+            </table>
+            <p class="text-muted">
+                Total group account payout: {{ group.total_contribution }} * {{ marginal_return }} = {{ group_account_payout }} <br>
+                Your share of the group account payout: {{ group_account_payout }} / {{ C.PLAYERS_PER_GROUP }} = {{ group.individual_share }} <br>
+                Payoff formula: Private account balance + Your share of the group account payout <br>
+                {{ endowment_kept }} + {{ group.individual_share }} = {{ player.payoff }}
+            </p>
+        </div>
+    </div>
 
-    {{ next_button }}
+    <div class="card m-3">
+        <div class="card-body">
+            <h5 class="card-title">Full History</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Round</th>
+                        <th>The public account multiplier</th>
+                        <th>Your Contribution</th>
+                        <th>Public account balance</th>
+                        <th>Your payoff</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in past_rounds %}
+                        <tr {% if p.round_number == subsession.round_number %}class="table-active"{% endif %}>
+                            <td>{{ p.round_number }}</td>
+                            <td>{{ p.group.mpcr }}</td>
+                            <td>{{ p.contribution }}</td>
+                            <td>{{ p.group.total_contribution }}</td>
+                            <td>{{ p.payoff }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot style="border-top: 1px solid currentColor;">
+                    <tr>
+                        <td><strong>ALL</strong></td>
+                        <td colspan="3"></td>
+                        <td><strong>{{ cumulative_payoff }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="m-3">
+        {{ next_button }}
+    </div>
 
 {{ endblock }}
