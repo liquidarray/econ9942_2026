@@ -1,0 +1,260 @@
+{% extends "global/Page.html" %}
+
+{% block style %}
+    <style>
+        #mpl_wrapper {
+            position: relative;
+            padding-left: 44px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            user-select: none;
+            cursor: default;
+        }
+
+        #my_table {
+            margin-bottom: 0;
+        }
+
+        #my_table td {
+            text-align: center;
+            cursor: default;
+            user-select: none;
+        }
+
+        /* Light highlighting when in Preview (unlocked) mode */
+        .preview_selected {
+            background: #bfd9bf !important;
+        }
+
+        /* Solid highlighting when Locked */
+        .selected {
+            background: darkseagreen !important;
+        }
+
+        /* Horizontal divider highlight bar across the table */
+        #divider_line {
+            display: none;
+            position: absolute;
+            left: 44px;
+            right: 0;
+            height: 4px;
+            background: #999999;
+            transform: translateY(-50%);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #divider_line.locked {
+            height: 5px;
+            background: #222222;
+        }
+
+        /* Poofy triangle thumb button on the left side of the table */
+        #divider_thumb {
+            display: none;
+            position: absolute;
+            left: 4px;
+            width: 36px;
+            height: 28px;
+            transform: translateY(-50%);
+            z-index: 6;
+            cursor: pointer;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+            transition: transform 0.08s ease;
+        }
+
+        #divider_thumb:hover {
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        #divider_thumb:active {
+            transform: translateY(-50%) scale(0.96);
+        }
+
+        #divider_thumb svg .thumb_body {
+            fill: url(#thumbGradPreview);
+            stroke: #4b6b4b;
+            stroke-width: 1.5;
+        }
+
+        #divider_thumb.locked svg .thumb_body {
+            fill: url(#thumbGradLocked);
+            stroke: #1e3a1e;
+            stroke-width: 2;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    Page title
+{% endblock %}
+
+{% block content %}
+
+    <div id="mpl_wrapper">
+        <!-- Poofy triangle thumb pointing inward toward the active divider -->
+        <div id="divider_thumb" title="Click to lock or unlock switch point">
+            <svg width="36" height="28" viewBox="0 0 36 28" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="thumbGradPreview" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#f2f9f2" />
+                        <stop offset="50%" stop-color="#bfd9bf" />
+                        <stop offset="100%" stop-color="#8fb88f" />
+                    </linearGradient>
+                    <linearGradient id="thumbGradLocked" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#b8d8b8" />
+                        <stop offset="50%" stop-color="#76a976" />
+                        <stop offset="100%" stop-color="#467346" />
+                    </linearGradient>
+                </defs>
+                <!-- Rounded poofy button shape tapering to a right-pointing triangle tip at (35, 14) -->
+                <path class="thumb_body" d="M 7,3 H 18 C 21,3 23,4 25,6 L 35,14 L 25,22 C 23,24 21,25 18,25 H 7 A 5,5 0 0 1 2,20 V 8 A 5,5 0 0 1 7,3 Z" />
+            </svg>
+        </div>
+
+        <!-- Highlighted horizontal divider bar -->
+        <div id="divider_line"></div>
+
+        <table class="table table-bordered" id="my_table">
+            {% for r in rows %}
+                <tr data-row="{{ r.id }}">
+                    <td id="L{{ r.id }}" class="choice_cell">{{ r.L }}</td>
+                    <td id="R{{ r.id }}" class="choice_cell">{{ r.R }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <input type="hidden" name="response" id="response" value="" />
+
+    <div class="mt-3">
+        <button id="submit" class="otree-btn-next btn btn-primary" disabled>Submit</button>
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        let num_rows = {{ num_rows }};
+        let response = new Array(num_rows).fill(-999);
+        let isLocked = false;
+        let activeDivider = null; // integer in [0, num_rows]
+
+        // Returns array of { index, y } for all N + 1 horizontal dividers
+        function getDividers() {
+            let wrapperRect = document.getElementById('mpl_wrapper').getBoundingClientRect();
+            let trs = document.querySelectorAll('#my_table tr');
+            let dividers = [];
+
+            if (trs.length === 0) return dividers;
+
+            // Divider 0: top border of row 1
+            let firstRect = trs[0].getBoundingClientRect();
+            dividers.push({ index: 0, y: firstRect.top - wrapperRect.top });
+
+            // Dividers 1..N: bottom border of each row
+            trs.forEach(function(tr, idx) {
+                let rect = tr.getBoundingClientRect();
+                dividers.push({ index: idx + 1, y: rect.bottom - wrapperRect.top });
+            });
+
+            return dividers;
+        }
+
+        // Find the divider closest to the current mouse Y position
+        function getNearestDivider(clientY) {
+            let wrapperRect = document.getElementById('mpl_wrapper').getBoundingClientRect();
+            let relY = clientY - wrapperRect.top;
+            let dividers = getDividers();
+
+            let best = dividers[0];
+            let minDist = Math.abs(relY - best.y);
+
+            for (let i = 1; i < dividers.length; i++) {
+                let dist = Math.abs(relY - dividers[i].y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    best = dividers[i];
+                }
+            }
+            return best;
+        }
+
+        // Apply visual state for divider k (0..num_rows)
+        function renderDividerState(dividerObj, locked) {
+            let k = dividerObj.index;
+            activeDivider = k;
+
+            // Position the thumb and horizontal line at divider Y
+            $('#divider_thumb')
+                .css({ display: 'block', top: dividerObj.y + 'px' })
+                .toggleClass('locked', locked);
+
+            $('#divider_line')
+                .css({ display: 'block', top: dividerObj.y + 'px' })
+                .toggleClass('locked', locked);
+
+            // Clear cell highlights
+            $('.choice_cell').removeClass('preview_selected selected');
+            let cellClass = locked ? 'selected' : 'preview_selected';
+
+            // Rows 1..k above the divider -> Left (0)
+            // Rows k+1..num_rows below the divider -> Right (1)
+            for (let r = 1; r <= num_rows; r++) {
+                if (r <= k) {
+                    $('#L' + r).addClass(cellClass);
+                    response[r - 1] = 0;
+                } else {
+                    $('#R' + r).addClass(cellClass);
+                    response[r - 1] = 1;
+                }
+            }
+
+            if (locked) {
+                $('#response').val(JSON.stringify(response));
+                $('#submit').prop('disabled', false);
+            } else {
+                $('#submit').prop('disabled', true);
+            }
+        }
+
+        // Reset to Initial state (when mouse leaves wrapper while unlocked)
+        function clearPreview() {
+            activeDivider = null;
+            $('#divider_thumb').hide().removeClass('locked');
+            $('#divider_line').hide().removeClass('locked');
+            $('.choice_cell').removeClass('preview_selected selected');
+            $('#submit').prop('disabled', true);
+        }
+
+        $(document).ready(function() {
+            let $wrapper = $('#mpl_wrapper');
+
+            $wrapper.on('mousemove', function(e) {
+                if (!isLocked) {
+                    let nearest = getNearestDivider(e.clientY);
+                    renderDividerState(nearest, false);
+                }
+            });
+
+            $wrapper.on('mouseleave', function() {
+                if (!isLocked) {
+                    clearPreview();
+                }
+            });
+
+            $wrapper.on('click', function(e) {
+                let nearest = getNearestDivider(e.clientY);
+                if (!isLocked) {
+                    // Lock at the currently previewed divider
+                    isLocked = true;
+                    renderDividerState(nearest, true);
+                } else {
+                    // Unlock and immediately preview at the current mouse position
+                    isLocked = false;
+                    renderDividerState(nearest, false);
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -71,6 +71,29 @@ class MyPage(Page):
         player.selected_value = selected_row_idx + 1
 
 
+class SingleSwitch(Page):
+    form_model = 'player'
+    form_fields = ['response']
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        return dict(
+            num_rows=Constants.num_rows,
+            rows=get_rows(),
+        )
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        response = json.loads(player.response)
+        num_rows = len(response)
+        selected_row_idx = random.randint(0, num_rows - 1)
+        player.selected_row = selected_row_idx + 1  # 1-indexed
+
+        # In SingleSwitch: 0 = L (purchase), 1 = R (forego)
+        player.advice_purchased = (response[selected_row_idx] == 0)
+        player.selected_value = selected_row_idx + 1
+
+
 class Results(Page):
     @staticmethod
     def vars_for_template(player: Player):
@@ -88,4 +111,8 @@ class Results(Page):
         )
 
 
-page_sequence = [MyPage, Results]
+class SingleSwitchResults(Results):
+    template_name = 'mpl/Results.html'
+
+
+page_sequence = [MyPage, Results, SingleSwitch, SingleSwitchResults]
