@@ -20,6 +20,12 @@ SESSION_CONFIGS = [
         app_sequence=['rps'],
         num_demo_participants=1, # 1 because it's human vs. computer
     ),
+    dict(
+        name='mpl',
+        display_name="Multiple Price List (MPL)",
+        num_demo_participants=1,
+        app_sequence=['mpl'],
+    ),
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
