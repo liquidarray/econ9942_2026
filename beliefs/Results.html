@@ -39,9 +39,9 @@
 
 {{ block content }}
 
-<!-- QUESTION 1 -->
+<!-- CASE A -->
 <div class="results-card">
-    <p class="fw-semibold mb-3">{{ exog_prompt }}</p>
+    <p class="fw-semibold mb-3">{{ prompt_a }}</p>
 
     <table class="table table-sm table-bordered align-middle mb-2">
         <thead class="table-light">
@@ -52,7 +52,7 @@
             </tr>
         </thead>
         <tbody>
-            {{ for r in exog_rows }}
+            {{ for r in rows_a }}
             <tr class="{{ if r.is_correct }}true-bin-row{{ endif }}">
                 <td>
                     {{ r.label }}
@@ -67,21 +67,21 @@
 
     <div class="summary-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div>
-            <strong>True Answer:</strong> {{ exog_true_label }}
+            <strong>True Answer:</strong> {{ true_label_a }}
             &nbsp;|&nbsp;
-            <strong>Accuracy:</strong> {{ exog_accuracy_pct }}
+            <strong>Accuracy:</strong> {{ accuracy_pct_a }}
             &nbsp;|&nbsp;
-            <strong>Earnings Efficiency:</strong> {{ exog_efficiency_pct }}
+            <strong>Earnings Efficiency:</strong> {{ efficiency_pct_a }}
         </div>
         <div>
-            <span class="badge bg-success fs-6">Cash Earned: {{ exog_earnings }} (of {{ exog_max_cash }} max)</span>
+            <span class="badge bg-success fs-6">Cash Earned: {{ earnings_a }} (of {{ max_cash_a }} max)</span>
         </div>
     </div>
 </div>
 
-<!-- QUESTION 2 -->
+<!-- CASE B -->
 <div class="results-card">
-    <p class="fw-semibold mb-3">{{ endog_prompt }}</p>
+    <p class="fw-semibold mb-3">{{ prompt_b }}</p>
 
     <table class="table table-sm table-bordered align-middle mb-2">
         <thead class="table-light">
@@ -92,11 +92,11 @@
             </tr>
         </thead>
         <tbody>
-            {{ for r in endog_rows }}
+            {{ for r in rows_b }}
             <tr class="{{ if r.is_correct }}true-bin-row{{ endif }}">
                 <td>
                     Face {{ r.label }}
-                    {{ if r.is_correct }}<span class="badge-true">Computer Rolled {{ endog_die_roll }}</span>{{ endif }}
+                    {{ if r.is_correct }}<span class="badge-true">Computer Rolled {{ die_roll_b }}</span>{{ endif }}
                 </td>
                 <td class="text-center">{{ r.tokens }} / {{ C.NUM_TOKENS }}</td>
                 <td class="text-center">{{ r.score_display }}</td>
@@ -107,19 +107,19 @@
 
     <div class="summary-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div>
-            <strong>Realized Die Roll:</strong> {{ endog_die_roll }}
+            <strong>Realized Die Roll:</strong> {{ die_roll_b }}
             &nbsp;|&nbsp;
-            <strong>Accuracy:</strong> {{ endog_accuracy_pct }}
+            <strong>Accuracy:</strong> {{ accuracy_pct_b }}
             &nbsp;|&nbsp;
-            <strong>Your Points:</strong> {{ endog_points }} / {{ endog_max_points }}
+            <strong>Your Points:</strong> {{ points_b }} / {{ max_points_b }}
             &nbsp;|&nbsp;
-            <strong>Random Draw:</strong> {{ endog_blp_threshold }}
+            <strong>Random Draw:</strong> {{ blp_threshold_b }}
         </div>
         <div>
-            {{ if endog_won }}
-                <span class="badge bg-success fs-6">Won Lottery ({{ endog_points }} &ge; {{ endog_blp_threshold }}): {{ endog_earnings }}</span>
+            {{ if won_b }}
+                <span class="badge bg-success fs-6">Won Lottery ({{ points_b }} &ge; {{ blp_threshold_b }}): {{ earnings_b }}</span>
             {{ else }}
-                <span class="badge bg-danger fs-6">Lost Lottery ({{ endog_points }} &lt; {{ endog_blp_threshold }}): {{ endog_earnings }}</span>
+                <span class="badge bg-danger fs-6">Lost Lottery ({{ points_b }} &lt; {{ blp_threshold_b }}): {{ earnings_b }}</span>
             {{ endif }}
         </div>
     </div>

@@ -5,13 +5,13 @@ import random
 doc = """
 Minimal Quadratic Scoring Rule (QSR) Belief Elicitation Demo.
 
-Demonstrates two conjecture types, two UI layouts, and two reward modes:
-1. Exogenous truth + Horizontal choice-row UI + Direct Cash QSR:
-   The correct bin is fixed and embedded directly with the question definition, and the QSR
-   formula directly computes cash earnings in dollars ($).
-2. Endogenous truth + Vertical column-chart UI + Points (Binarized Lottery Procedure / BLP):
-   The correct bin is a function of oTree code (a computerized random die roll), and the QSR
-   formula computes points (0 to 100) that determine the probability of winning a cash prize.
+Demonstrates two cases, two UI layouts, and two reward modes:
+- Case A: Fixed truth + Horizontal choice-row UI + Direct Cash QSR ($):
+  The correct bin is fixed in the question definition, and the QSR formula
+  directly computes cash earnings in dollars ($).
+- Case B: Random draw truth + Vertical column-chart UI + Points (Binarized Lottery Procedure / BLP):
+  The correct bin is determined by a computerized random die roll, and the QSR
+  formula computes points (0 to 100) that determine the probability of winning a cash prize.
 """
 
 
@@ -23,13 +23,13 @@ class C(BaseConstants):
     NUM_TOKENS = 10
 
     # -------------------------------------------------------------------------
-    # CASE 1: Exogenous Truth — Direct Cash QSR ($)
-    # Score for bin k = EXOG_ALPHA + EXOG_BETA * (2 * p_k - sum_i(p_i^2))
-    # With EXOG_ALPHA = 5.00 and EXOG_BETA = 5.00, cash earnings range from $0.00 to $10.00.
+    # CASE A: Direct Cash QSR ($)
+    # Score for bin k = ALPHA_A + BETA_A * (2 * p_k - sum_i(p_i^2))
+    # With ALPHA_A = 5.00 and BETA_A = 5.00, cash earnings range from $0.00 to $10.00.
     # -------------------------------------------------------------------------
-    EXOG_ALPHA = 5.0
-    EXOG_BETA = 5.0
-    EXOGENOUS_QUESTION = dict(
+    ALPHA_A = 5.0
+    BETA_A = 5.0
+    QUESTION_A = dict(
         prompt=(
             "In 1969, Ragnar Frisch and Jan Tinbergen were awarded the very first "
             "Nobel Memorial Prize in Economic Sciences. Which of the following economists "
@@ -45,17 +45,17 @@ class C(BaseConstants):
     )
 
     # -------------------------------------------------------------------------
-    # CASE 2: Endogenous Truth — Points QSR with Binarized Lottery Procedure (BLP)
-    # With ENDOG_ALPHA = 50.0 and ENDOG_BETA = 50.0, scores range from 0.00 to 100.00 points.
+    # CASE B: Points QSR with Binarized Lottery Procedure (BLP)
+    # With ALPHA_B = 50.0 and BETA_B = 50.0, scores range from 0.00 to 100.00 points.
     # -------------------------------------------------------------------------
-    ENDOG_ALPHA = 50.0
-    ENDOG_BETA = 50.0
-    ENDOG_PRIZE = 10.00
-    ENDOGENOUS_PROMPT = (
+    ALPHA_B = 50.0
+    BETA_B = 50.0
+    PRIZE_B = 10.00
+    PROMPT_B = (
         "The computer has rolled a fair 6-sided die (faces 1 through 6). "
         "What number did the computer roll?"
     )
-    ENDOGENOUS_LABELS = ["1", "2", "3", "4", "5", "6"]
+    LABELS_B = ["1", "2", "3", "4", "5", "6"]
 
 
 class Subsession(BaseSubsession):
@@ -67,22 +67,22 @@ class Group(BaseGroup):
 
 
 class Player(BasePlayer):
-    # --- Case 1: Exogenous question fields (Direct Cash QSR) ---
-    response_exogenous = models.StringField()
-    correct_bin_exogenous = models.IntegerField()
-    accuracy_exogenous = models.FloatField()
-    efficiency_exogenous = models.FloatField()
-    earnings_exogenous = models.FloatField(initial=0.0)
+    # --- Case A fields (Direct Cash QSR) ---
+    response_a = models.StringField()
+    correct_bin_a = models.IntegerField()
+    accuracy_a = models.FloatField()
+    efficiency_a = models.FloatField()
+    earnings_a = models.FloatField(initial=0.0)
 
-    # --- Case 2: Endogenous die-roll fields (Points / BLP QSR) ---
+    # --- Case B fields (Points / BLP QSR) ---
     die_roll = models.IntegerField()
-    response_endogenous = models.StringField()
-    correct_bin_endogenous = models.IntegerField()
-    accuracy_endogenous = models.FloatField()
-    points_endogenous = models.FloatField(initial=0.0)
-    win_prob_endogenous = models.FloatField()
-    blp_draw_endogenous = models.FloatField()
-    earnings_endogenous = models.FloatField(initial=0.0)
+    response_b = models.StringField()
+    correct_bin_b = models.IntegerField()
+    accuracy_b = models.FloatField()
+    points_b = models.FloatField(initial=0.0)
+    win_prob_b = models.FloatField()
+    blp_draw_b = models.FloatField()
+    earnings_b = models.FloatField(initial=0.0)
 
 
 # =============================================================================
@@ -91,13 +91,13 @@ class Player(BasePlayer):
 
 def creating_session(subsession: Subsession):
     for p in subsession.get_players():
-        # Case 1: Truth comes directly from the exogenous question definition
-        p.correct_bin_exogenous = C.EXOGENOUS_QUESTION['correct_bin']
+        # Case A: Truth comes directly from the question definition
+        p.correct_bin_a = C.QUESTION_A['correct_bin']
 
-        # Case 2: Truth is generated endogenously by oTree code (a random 6-sided die roll)
+        # Case B: Truth is generated by a random 6-sided die roll
         p.die_roll = random.randint(1, 6)
-        p.correct_bin_endogenous = p.die_roll - 1  # Map die face (1..6) to 0-based bin index (0..5)
-        p.blp_draw_endogenous = random.random()
+        p.correct_bin_b = p.die_roll - 1  # Map die face (1..6) to 0-based bin index (0..5)
+        p.blp_draw_b = random.random()
 
 
 def calculate_qsr(tokens_list: list[int], correct_bin: int, alpha: float, beta: float):
@@ -113,138 +113,136 @@ def calculate_qsr(tokens_list: list[int], correct_bin: int, alpha: float, beta: 
     return accuracy, score, efficiency
 
 
-def score_exogenous(player: Player):
+def score_case_a(player: Player):
     """Direct Cash QSR: score is paid directly in dollars."""
-    tokens = json.loads(player.response_exogenous)
+    tokens = json.loads(player.response_a)
     acc, cash_score, eff = calculate_qsr(
-        tokens, player.correct_bin_exogenous, C.EXOG_ALPHA, C.EXOG_BETA
+        tokens, player.correct_bin_a, C.ALPHA_A, C.BETA_A
     )
-    player.accuracy_exogenous = acc
-    player.earnings_exogenous = cash_score
-    player.efficiency_exogenous = eff
+    player.accuracy_a = acc
+    player.earnings_a = cash_score
+    player.efficiency_a = eff
     player.payoff += cu(cash_score)
 
 
-def score_endogenous(player: Player):
+def score_case_b(player: Player):
     """Points / BLP QSR: score is in points (0-100), determining probability of winning prize."""
-    tokens = json.loads(player.response_endogenous)
+    tokens = json.loads(player.response_b)
     acc, points, win_prob = calculate_qsr(
-        tokens, player.correct_bin_endogenous, C.ENDOG_ALPHA, C.ENDOG_BETA
+        tokens, player.correct_bin_b, C.ALPHA_B, C.BETA_B
     )
-    player.accuracy_endogenous = acc
-    player.points_endogenous = points
-    player.win_prob_endogenous = win_prob
-    player.earnings_endogenous = C.ENDOG_PRIZE if player.blp_draw_endogenous < win_prob else 0.0
-    player.payoff += cu(player.earnings_endogenous)
+    player.accuracy_b = acc
+    player.points_b = points
+    player.win_prob_b = win_prob
+    player.earnings_b = C.PRIZE_B if player.blp_draw_b < win_prob else 0.0
+    player.payoff += cu(player.earnings_b)
 
 
 # =============================================================================
 # PAGES
 # =============================================================================
 
-class Exogenous(Page):
+class CaseA(Page):
     """
-    Case 1: Truth is exogenous and embedded with the question.
-    Uses the horizontal choice-row QSR template with direct cash ($) payoffs.
+    Case A: Uses the horizontal choice-row QSR template with direct cash ($) payoffs.
     """
     template_name = 'beliefs/Horizontal.html'
     form_model = 'player'
-    form_fields = ['response_exogenous']
+    form_fields = ['response_a']
 
     @staticmethod
     def vars_for_template(player: Player):
         return dict(
-            question_text=C.EXOGENOUS_QUESTION['prompt'],
-            bin_labels=C.EXOGENOUS_QUESTION['labels'],
-            bin_labels_json=json.dumps(C.EXOGENOUS_QUESTION['labels']),
+            question_text=C.QUESTION_A['prompt'],
+            bin_labels=C.QUESTION_A['labels'],
+            bin_labels_json=json.dumps(C.QUESTION_A['labels']),
             num_tokens=C.NUM_TOKENS,
-            alpha=C.EXOG_ALPHA,
-            beta=C.EXOG_BETA,
-            form_field_name='response_exogenous',
+            alpha=C.ALPHA_A,
+            beta=C.BETA_A,
+            form_field_name='response_a',
         )
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        score_exogenous(player)
+        score_case_a(player)
 
 
-class Endogenous(Page):
+class CaseB(Page):
     """
-    Case 2: Truth is a function of oTree code (computerized random die roll).
-    Uses the vertical column-chart QSR template with points (BLP).
+    Case B: Uses the vertical column-chart QSR template with points (BLP).
     """
     template_name = 'beliefs/Vertical.html'
     form_model = 'player'
-    form_fields = ['response_endogenous']
+    form_fields = ['response_b']
 
     @staticmethod
     def vars_for_template(player: Player):
         return dict(
-            question_text=C.ENDOGENOUS_PROMPT,
-            bin_labels_json=json.dumps(C.ENDOGENOUS_LABELS),
+            question_text=C.PROMPT_B,
+            bin_labels_json=json.dumps(C.LABELS_B),
             num_tokens=C.NUM_TOKENS,
-            alpha=C.ENDOG_ALPHA,
-            beta=C.ENDOG_BETA,
-            form_field_name='response_endogenous',
+            alpha=C.ALPHA_B,
+            beta=C.BETA_B,
+            form_field_name='response_b',
         )
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        score_endogenous(player)
+        score_case_b(player)
 
 
 class Results(Page):
     @staticmethod
     def vars_for_template(player: Player):
-        exog_tokens = json.loads(player.response_exogenous)
-        endog_tokens = json.loads(player.response_endogenous)
+        tokens_a = json.loads(player.response_a)
+        tokens_b = json.loads(player.response_b)
 
-        exog_rows = []
-        for idx, (label, tok) in enumerate(zip(C.EXOGENOUS_QUESTION['labels'], exog_tokens)):
-            _, cash_val, _ = calculate_qsr(exog_tokens, idx, C.EXOG_ALPHA, C.EXOG_BETA)
-            exog_rows.append(dict(
+        rows_a = []
+        for idx, (label, tok) in enumerate(zip(C.QUESTION_A['labels'], tokens_a)):
+            _, cash_val, _ = calculate_qsr(tokens_a, idx, C.ALPHA_A, C.BETA_A)
+            rows_a.append(dict(
                 index=idx,
                 label=label,
                 tokens=tok,
                 score_display=f"${cash_val:.2f}",
-                is_correct=(idx == player.correct_bin_exogenous),
+                is_correct=(idx == player.correct_bin_a),
             ))
 
-        endog_rows = []
-        for idx, (label, tok) in enumerate(zip(C.ENDOGENOUS_LABELS, endog_tokens)):
-            _, pts_val, _ = calculate_qsr(endog_tokens, idx, C.ENDOG_ALPHA, C.ENDOG_BETA)
-            endog_rows.append(dict(
+        rows_b = []
+        for idx, (label, tok) in enumerate(zip(C.LABELS_B, tokens_b)):
+            _, pts_val, _ = calculate_qsr(tokens_b, idx, C.ALPHA_B, C.BETA_B)
+            rows_b.append(dict(
                 index=idx,
                 label=label,
                 tokens=tok,
                 score_display=f"{pts_val:.2f} points",
-                is_correct=(idx == player.correct_bin_endogenous),
+                is_correct=(idx == player.correct_bin_b),
             ))
 
-        max_points = C.ENDOG_ALPHA + C.ENDOG_BETA
+        max_points = C.ALPHA_B + C.BETA_B
 
         return dict(
-            # Case 1 summary (Direct Cash QSR)
-            exog_prompt=C.EXOGENOUS_QUESTION['prompt'],
-            exog_rows=exog_rows,
-            exog_true_label=C.EXOGENOUS_QUESTION['labels'][player.correct_bin_exogenous],
-            exog_accuracy_pct=f"{player.accuracy_exogenous * 100:.0f}%",
-            exog_efficiency_pct=f"{player.efficiency_exogenous * 100:.1f}%",
-            exog_earnings=f"${player.earnings_exogenous:.2f}",
-            exog_max_cash=f"${(C.EXOG_ALPHA + C.EXOG_BETA):.2f}",
-            # Case 2 summary (Points / BLP QSR)
-            endog_prompt=C.ENDOGENOUS_PROMPT,
-            endog_rows=endog_rows,
-            endog_die_roll=player.die_roll,
-            endog_true_label=C.ENDOGENOUS_LABELS[player.correct_bin_endogenous],
-            endog_accuracy_pct=f"{player.accuracy_endogenous * 100:.0f}%",
-            endog_points=f"{player.points_endogenous:.2f}",
-            endog_max_points=f"{max_points:.0f}",
-            endog_blp_threshold=f"{player.blp_draw_endogenous * max_points:.2f}",
-            endog_won=(player.blp_draw_endogenous < player.win_prob_endogenous),
-            endog_earnings=f"${player.earnings_endogenous:.2f}",
-            total_earnings=f"${(player.earnings_exogenous + player.earnings_endogenous):.2f}",
+            # Case A summary (Direct Cash QSR)
+            prompt_a=C.QUESTION_A['prompt'],
+            rows_a=rows_a,
+            true_label_a=C.QUESTION_A['labels'][player.correct_bin_a],
+            accuracy_pct_a=f"{player.accuracy_a * 100:.0f}%",
+            efficiency_pct_a=f"{player.efficiency_a * 100:.1f}%",
+            earnings_a=f"${player.earnings_a:.2f}",
+            max_cash_a=f"${(C.ALPHA_A + C.BETA_A):.2f}",
+            # Case B summary (Points / BLP QSR)
+            prompt_b=C.PROMPT_B,
+            rows_b=rows_b,
+            die_roll_b=player.die_roll,
+            true_label_b=C.LABELS_B[player.correct_bin_b],
+            accuracy_pct_b=f"{player.accuracy_b * 100:.0f}%",
+            points_b=f"{player.points_b:.2f}",
+            max_points_b=f"{max_points:.0f}",
+            blp_threshold_b=f"{player.blp_draw_b * max_points:.2f}",
+            won_b=(player.blp_draw_b < player.win_prob_b),
+            earnings_b=f"${player.earnings_b:.2f}",
+            total_earnings=f"${(player.earnings_a + player.earnings_b):.2f}",
         )
 
 
-page_sequence = [Exogenous, Endogenous, Results]
+page_sequence = [CaseA, CaseB, Results]
