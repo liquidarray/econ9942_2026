@@ -1,0 +1,135 @@
+{{ extends "global/Page.html" }}
+
+{{ block title }}{{ endblock }}
+
+{{ block styles }}
+<style>
+    .results-card {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem 1.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .true-bin-row {
+        background-color: #d1e7dd !important;
+        font-weight: 600;
+    }
+
+    .badge-true {
+        background-color: #198754;
+        color: #ffffff;
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        margin-left: 0.5rem;
+    }
+
+    .summary-footer {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 0.85rem 1.1rem;
+        margin-top: 1rem;
+    }
+</style>
+{{ endblock }}
+
+{{ block content }}
+
+<!-- QUESTION 1 -->
+<div class="results-card">
+    <p class="fw-semibold mb-3">{{ exog_prompt }}</p>
+
+    <table class="table table-sm table-bordered align-middle mb-2">
+        <thead class="table-light">
+            <tr>
+                <th>Choice</th>
+                <th class="text-center">Tokens Allocated</th>
+                <th class="text-center">Cash Payoff (if true)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ for r in exog_rows }}
+            <tr class="{{ if r.is_correct }}true-bin-row{{ endif }}">
+                <td>
+                    {{ r.label }}
+                    {{ if r.is_correct }}<span class="badge-true">True Answer</span>{{ endif }}
+                </td>
+                <td class="text-center">{{ r.tokens }} / {{ C.NUM_TOKENS }}</td>
+                <td class="text-center">{{ r.score_display }}</td>
+            </tr>
+            {{ endfor }}
+        </tbody>
+    </table>
+
+    <div class="summary-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <strong>True Answer:</strong> {{ exog_true_label }}
+            &nbsp;|&nbsp;
+            <strong>Accuracy:</strong> {{ exog_accuracy_pct }}
+            &nbsp;|&nbsp;
+            <strong>Earnings Efficiency:</strong> {{ exog_efficiency_pct }}
+        </div>
+        <div>
+            <span class="badge bg-success fs-6">Cash Earned: {{ exog_earnings }} (of {{ exog_max_cash }} max)</span>
+        </div>
+    </div>
+</div>
+
+<!-- QUESTION 2 -->
+<div class="results-card">
+    <p class="fw-semibold mb-3">{{ endog_prompt }}</p>
+
+    <table class="table table-sm table-bordered align-middle mb-2">
+        <thead class="table-light">
+            <tr>
+                <th>Die Face</th>
+                <th class="text-center">Tokens Allocated</th>
+                <th class="text-center">QSR Score (if rolled)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ for r in endog_rows }}
+            <tr class="{{ if r.is_correct }}true-bin-row{{ endif }}">
+                <td>
+                    Face {{ r.label }}
+                    {{ if r.is_correct }}<span class="badge-true">Computer Rolled {{ endog_die_roll }}</span>{{ endif }}
+                </td>
+                <td class="text-center">{{ r.tokens }} / {{ C.NUM_TOKENS }}</td>
+                <td class="text-center">{{ r.score_display }}</td>
+            </tr>
+            {{ endfor }}
+        </tbody>
+    </table>
+
+    <div class="summary-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <strong>Realized Die Roll:</strong> {{ endog_die_roll }}
+            &nbsp;|&nbsp;
+            <strong>Accuracy:</strong> {{ endog_accuracy_pct }}
+            &nbsp;|&nbsp;
+            <strong>Your Points:</strong> {{ endog_points }} / {{ endog_max_points }}
+            &nbsp;|&nbsp;
+            <strong>Random Draw:</strong> {{ endog_blp_threshold }}
+        </div>
+        <div>
+            {{ if endog_won }}
+                <span class="badge bg-success fs-6">Won Lottery ({{ endog_points }} &ge; {{ endog_blp_threshold }}): {{ endog_earnings }}</span>
+            {{ else }}
+                <span class="badge bg-danger fs-6">Lost Lottery ({{ endog_points }} &lt; {{ endog_blp_threshold }}): {{ endog_earnings }}</span>
+            {{ endif }}
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-secondary d-flex justify-content-between align-items-center">
+    <span class="fw-bold">Total Earnings Across Both Reports:</span>
+    <span class="fs-5 fw-bold">{{ total_earnings }}</span>
+</div>
+
+{{ next_button }}
+
+{{ endblock }}

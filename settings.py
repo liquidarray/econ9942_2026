@@ -3,6 +3,18 @@ from os import environ
 
 SESSION_CONFIGS = [
     dict(
+        name='mpl',
+        display_name="Multiple Price List (MPL)",
+        num_demo_participants=1,
+        app_sequence=['mpl'],
+    ),
+    dict(
+        name='beliefs',
+        display_name="Belief Elicitation (QSR & BLP Demo)",
+        num_demo_participants=1,
+        app_sequence=['beliefs'],
+    ),
+    dict(
         name='public_goods_game',
         display_name='VCM Public Goods Game',
         num_demo_participants=6,
@@ -19,12 +31,6 @@ SESSION_CONFIGS = [
         display_name="Rock-Paper-Scissors Tournament",
         app_sequence=['rps'],
         num_demo_participants=1, # 1 because it's human vs. computer
-    ),
-    dict(
-        name='mpl',
-        display_name="Multiple Price List (MPL)",
-        num_demo_participants=1,
-        app_sequence=['mpl'],
     ),
 ]
 

@@ -1,0 +1,331 @@
+{{ extends "global/Page.html" }}
+
+{{ block title }}{{ endblock }}
+
+{{ block styles }}
+<style>
+    .qsr-card {
+        max-width: 820px;
+        margin: 1rem auto;
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.75rem 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .qsr-question-stem {
+        font-size: 1.15rem;
+        line-height: 1.5;
+        color: #111111;
+        margin-bottom: 1.5rem;
+    }
+
+    .qsr-status-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fa;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .qsr-tokens-left {
+        color: #d9534f;
+        font-weight: 700;
+    }
+
+    .qsr-tokens-left.zero {
+        color: #198754;
+    }
+
+    .qsr-choices-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        counter-reset: choice-counter;
+    }
+
+    .qsr-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem 0;
+        counter-increment: choice-counter;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    /* Pill-shaped - / + token spinner */
+    .number-input {
+        display: inline-flex;
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: 20px;
+        padding: 0.2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+
+    .number-input button {
+        outline: none;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 50%;
+        width: 2.2rem;
+        height: 2.2rem;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.1s;
+    }
+
+    .number-input button:hover {
+        background-color: #e2e6ea;
+    }
+
+    .number-input button:active {
+        background-color: #dae0e5;
+    }
+
+    .number-input button::before,
+    .number-input button::after {
+        content: '';
+        position: absolute;
+        background-color: #495057;
+    }
+
+    .number-input button::before {
+        width: 12px;
+        height: 2px;
+    }
+
+    .number-input button.plus::after {
+        width: 2px;
+        height: 12px;
+    }
+
+    .number-input input[type=number] {
+        width: 3rem;
+        border: none;
+        font-size: 1.15rem;
+        font-weight: 700;
+        text-align: center;
+        color: #2557a7;
+        -moz-appearance: textfield;
+        background: transparent;
+    }
+
+    .number-input input[type=number]::-webkit-inner-spin-button,
+    .number-input input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Choice badge (A, B, C, D) and label */
+    .qsr-label {
+        flex: 0 0 38%;
+        display: flex;
+        align-items: center;
+        font-size: 1rem;
+        line-height: 1.4;
+        color: #111111;
+    }
+
+    .choice-badge {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 1.5px solid #495057;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #212529;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .choice-badge::before {
+        content: counter(choice-counter, upper-alpha);
+    }
+
+    /* Horizontal score bar and points readout */
+    .qsr-bar-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        height: 34px;
+        padding-right: 90px;
+    }
+
+    .qsr-bar-fill {
+        height: 100%;
+        width: 0%;
+        background-color: #8daadb;
+        border-radius: 4px;
+        flex-shrink: 0;
+        transition: width 0.15s ease-out;
+    }
+
+    .qsr-score-text {
+        margin-left: 8px;
+        font-size: 0.88rem;
+        color: #495057;
+        white-space: nowrap;
+    }
+</style>
+{{ endblock }}
+
+{{ block content }}
+<div class="qsr-card">
+    <div class="qsr-question-stem">
+        {{ question_text }}
+    </div>
+
+    <div class="qsr-status-bar">
+        <span id="directions_text">Allocate all {{ num_tokens }} tokens across the choices below</span>
+        <span>Unallocated tokens: <span id="tokens_left" class="qsr-tokens-left">{{ num_tokens }}</span></span>
+    </div>
+
+    <div class="qsr-choices-list" id="choices_container"></div>
+
+    <input type="hidden" name="{{ form_field_name }}" id="{{ form_field_name }}" />
+
+    <div class="d-flex justify-content-end align-items-center mt-4 pt-2">
+        <button type="submit" id="btn_submit" class="btn btn-primary px-4" disabled>
+            Submit
+        </button>
+    </div>
+</div>
+{{ endblock }}
+
+{{ block scripts }}
+<script>
+    const binLabels = {{ bin_labels_json|safe }};
+    const numBins = binLabels.length;
+    const numTokens = {{ num_tokens }};
+    const alpha = {{ alpha }};
+    const beta = {{ beta }};
+    const hiddenField = document.getElementById('{{ form_field_name }}');
+
+    let response = new Array(numBins).fill(0);
+
+    // Quadratic Scoring Rule: score_k = alpha + beta * (2 * p_k - sum_i(p_i^2))
+    function scoringRule(binIndex) {
+        let sumSquares = 0;
+        for (let b = 0; b < numBins; b++) {
+            const p = response[b] / numTokens;
+            sumSquares += p * p;
+        }
+        const pBin = response[binIndex] / numTokens;
+        return alpha + beta * ((2 * pBin) - sumSquares);
+    }
+
+    function updateUI() {
+        const allocated = response.reduce((a, b) => a + b, 0);
+        const unallocated = numTokens - allocated;
+
+        const tokensLeftEl = document.getElementById('tokens_left');
+        tokensLeftEl.textContent = unallocated;
+        tokensLeftEl.classList.toggle('zero', unallocated === 0);
+
+        const directionsEl = document.getElementById('directions_text');
+        const submitBtn = document.getElementById('btn_submit');
+
+        if (unallocated === 0) {
+            submitBtn.disabled = false;
+            directionsEl.textContent = 'All tokens allocated — ready to submit';
+        } else {
+            submitBtn.disabled = true;
+            directionsEl.textContent = `Allocate all ${numTokens} tokens before submitting`;
+        }
+
+        for (let i = 0; i < numBins; i++) {
+            document.getElementById(`qsr_input_${i}`).value = response[i];
+            const score = scoringRule(i);
+            const pct = Math.max(0, Math.min(100, (score / (alpha + beta)) * 100));
+            document.getElementById(`qsr_bar_fill_${i}`).style.width = `${pct}%`;
+            document.getElementById(`qsr_score_text_${i}`).textContent = `$${score.toFixed(2)}`;
+        }
+
+        hiddenField.value = JSON.stringify(response);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('choices_container');
+
+        // Build horizontal rows for each choice
+        binLabels.forEach((label, idx) => {
+            const row = document.createElement('div');
+            row.className = 'qsr-row';
+            row.innerHTML = `
+                <div class="number-input">
+                    <button type="button" id="btn_down_${idx}" class="minus" aria-label="Decrease tokens"></button>
+                    <input type="number" id="qsr_input_${idx}" value="0" readonly>
+                    <button type="button" id="btn_up_${idx}" class="plus" aria-label="Increase tokens"></button>
+                </div>
+                <div class="qsr-label">
+                    <span class="choice-badge"></span>
+                    <span>${label}</span>
+                </div>
+                <div class="qsr-bar-wrapper">
+                    <div class="qsr-bar-fill" id="qsr_bar_fill_${idx}"></div>
+                    <div class="qsr-score-text" id="qsr_score_text_${idx}">$0.00</div>
+                </div>
+            `;
+            container.appendChild(row);
+
+            // Bind press-and-hold increment/decrement handlers
+            let timeout, interval;
+            const btnUp = document.getElementById(`btn_up_${idx}`);
+            const btnDown = document.getElementById(`btn_down_${idx}`);
+
+            function clearTimers() {
+                clearTimeout(timeout);
+                clearInterval(interval);
+            }
+
+            function increment() {
+                const allocated = response.reduce((a, b) => a + b, 0);
+                if (allocated < numTokens) {
+                    response[idx]++;
+                    updateUI();
+                }
+            }
+
+            function decrement() {
+                if (response[idx] > 0) {
+                    response[idx]--;
+                    updateUI();
+                }
+            }
+
+            btnUp.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                increment();
+                timeout = setTimeout(() => { interval = setInterval(increment, 50); }, 300);
+            });
+            btnDown.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                decrement();
+                timeout = setTimeout(() => { interval = setInterval(decrement, 50); }, 300);
+            });
+
+            ['mouseup', 'mouseleave', 'touchend'].forEach(evt => {
+                btnUp.addEventListener(evt, clearTimers);
+                btnDown.addEventListener(evt, clearTimers);
+            });
+        });
+
+        updateUI();
+    });
+</script>
+{{ endblock }}
