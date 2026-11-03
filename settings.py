@@ -15,6 +15,12 @@ SESSION_CONFIGS = [
         app_sequence=['beliefs'],
     ),
     dict(
+        name='risk',
+        display_name="Risk Preferences (Pie Chart Lotteries)",
+        num_demo_participants=1,
+        app_sequence=['risk'],
+    ),
+    dict(
         name='public_goods_game',
         display_name='VCM Public Goods Game',
         num_demo_participants=6,

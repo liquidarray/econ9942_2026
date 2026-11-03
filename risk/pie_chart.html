@@ -1,0 +1,65 @@
+<script>
+    const colors = ['#98AFC7', '#E77471', '#99C68E', '#DAA520'];
+    const radius = 150;
+    const center_x = 300;
+    const center_y = 250;
+
+    function render_lottery(canvas, lottery) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const probs = lottery[0];
+        const payoffs = lottery[1];
+        const array_sum = probs.reduce((acc, num) => acc + num, 0);
+
+        let cumulative = 0;
+
+        for (let i = 0; i < probs.length; i++) {
+            const start_angle = (cumulative / array_sum) * 360;
+            cumulative += probs[i];
+            const stop_angle = (cumulative / array_sum) * 360;
+
+            if (stop_angle > start_angle) {
+                const start_rad = (start_angle * Math.PI) / 180;
+                const stop_rad = (stop_angle * Math.PI) / 180;
+
+                // 1. Draw pie slice (or full circle if 100% probability)
+                ctx.beginPath();
+                if (probs[i] >= array_sum) {
+                    ctx.arc(center_x, center_y, radius, 0, 2 * Math.PI);
+                } else {
+                    ctx.moveTo(center_x, center_y);
+                    ctx.arc(center_x, center_y, radius, start_rad, stop_rad);
+                    ctx.closePath();
+                }
+                ctx.fillStyle = colors[i];
+                ctx.fill();
+                ctx.strokeStyle = colors[i];
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // 2. Draw money text on the outer edge of each pie slice
+                const mid_rad = ((start_angle + stop_angle) / 2) * (Math.PI / 180);
+                const text_x = center_x + (radius + 40) * Math.cos(mid_rad);
+                const text_y = center_y + (radius + 40) * Math.sin(mid_rad);
+
+                ctx.font = 'bold 36px Calibri, sans-serif';
+                ctx.fillStyle = colors[i];
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('$' + payoffs[i], text_x, text_y);
+
+                // 3. Draw text details below the pie
+                const prob = (probs[i] / array_sum) * 100;
+                const start_num = 1 + Math.round((100 * start_angle) / 360);
+                const stop_num = Math.round((100 * stop_angle) / 360);
+                const str = `Chance of winning $${payoffs[i]} is ${prob.toFixed(0)}%  (numbers ${start_num} to ${stop_num})`;
+                const detail_y = center_y + radius + 150 + 50 * i;
+
+                ctx.font = 'bold 24px Calibri, sans-serif';
+                ctx.fillStyle = colors[i];
+                ctx.fillText(str, center_x, detail_y);
+            }
+        }
+    }
+</script>

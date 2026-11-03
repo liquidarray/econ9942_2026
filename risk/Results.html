@@ -1,0 +1,78 @@
+{{ extends "global/Page.html" }}
+
+{{ block style }}
+    <style>
+        .page-header {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            padding-top: 10px;
+        }
+
+        body {
+            font-family: 'Verdana', sans-serif;
+            font-size: 24px;
+        }
+
+        .otree-body {
+            max-width: 1920px;
+            background-color: #F0F0F0;
+        }
+
+        #lotteries_div {
+            display: flex;
+            justify-content: space-evenly;
+        }
+
+        #left_div, #right_div {
+            border: 1px solid transparent;
+            align-items: flex-start;
+        }
+
+        #summary_list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        #summary_list li {
+            margin-bottom: 1.5rem;
+        }
+
+        header {
+            overflow: auto;
+        }
+    </style>
+{{ endblock }}
+
+{{ block content }}
+    <h2 class="text-center mb-5">Your Earnings</h2>
+
+    <div id="lotteries_div">
+        <div id="left_div">
+            <ul id="summary_list">
+                <li>Round selected for payment: {{ paid_round }}</li>
+                <li>Your choice in round {{ paid_round }} is now displayed.</li>
+                <li>Random number drawn: {{ random_number }}</li>
+                <li>Your earnings from this task: ${{ earnings }}</li>
+            </ul>
+        </div>
+        <div id="right_div">
+            <canvas id="right_canvas" width="600" height="800"></canvas>
+        </div>
+    </div>
+    <br>
+    <div class="text-center">
+        <button id="submit" class="otree-btn-next btn btn-primary">
+            <span id="submit_text">Next</span>
+        </button>
+    </div>
+{{ endblock }}
+
+{{ block script }}
+    {{ include 'risk/pie_chart.html' }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const rightCanvas = document.getElementById('right_canvas');
+            render_lottery(rightCanvas, js_vars.selected_lottery);
+        });
+    </script>
+{{ endblock }}

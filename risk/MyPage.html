@@ -1,0 +1,87 @@
+{{ extends "global/Page.html" }}
+
+{{ block style }}
+    <style>
+        .page-header {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            padding-top: 10px;
+        }
+
+        .otree-body {
+            max-width: 1920px;
+            background-color: #F0F0F0;
+        }
+
+        #lotteries_div {
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+        }
+
+        #left_div, #right_div {
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        #left_div:hover, #right_div:hover {
+            border-color: #4863A0;
+        }
+
+        .selected {
+            outline: 4px solid #4863A0;
+        }
+
+        header {
+            overflow: auto;
+        }
+    </style>
+{{ endblock }}
+
+{{ block content }}
+    <p>
+        <span id="round_text">Round {{ player.round_number }} of {{ C.NUM_ROUNDS }}</span>
+    </p>
+    <div id="lotteries_div">
+        <div id="left_div">
+            <canvas id="left_canvas" width="600" height="800"></canvas>
+        </div>
+        <div id="right_div">
+            <canvas id="right_canvas" width="600" height="800"></canvas>
+        </div>
+    </div>
+    <br>
+    <input type="hidden" name="response" id="response" />
+    <div class="text-center">
+        <button id="submit" class="otree-btn-next btn btn-primary" disabled>
+            <span id="submit_text">Submit</span>
+        </button>
+    </div>
+{{ endblock }}
+
+{{ block script }}
+    {{ include 'risk/pie_chart.html' }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const leftDiv = document.getElementById('left_div');
+            const rightDiv = document.getElementById('right_div');
+            const leftCanvas = document.getElementById('left_canvas');
+            const rightCanvas = document.getElementById('right_canvas');
+            const responseInput = document.getElementById('response');
+            const submitBtn = document.getElementById('submit');
+
+            render_lottery(leftCanvas, js_vars.left_lottery);
+            render_lottery(rightCanvas, js_vars.right_lottery);
+
+            function selectLottery(choice) {
+                responseInput.value = choice;
+                leftDiv.classList.toggle('selected', choice === 'L');
+                rightDiv.classList.toggle('selected', choice === 'R');
+                submitBtn.disabled = false;
+            }
+
+            leftDiv.addEventListener('click', () => selectLottery('L'));
+            rightDiv.addEventListener('click', () => selectLottery('R'));
+        });
+    </script>
+{{ endblock }}
