@@ -21,6 +21,12 @@ SESSION_CONFIGS = [
         app_sequence=['risk'],
     ),
     dict(
+        name='video',
+        display_name="Video Instructions",
+        num_demo_participants=1,
+        app_sequence=['video'],
+    ),
+    dict(
         name='public_goods_game',
         display_name='VCM Public Goods Game',
         num_demo_participants=6,

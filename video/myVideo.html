@@ -1,0 +1,187 @@
+{{ extends "global/Page.html" }}
+
+{{ block title }}
+    <div class="text-center mb-5">Instructions</div>
+{{ endblock }}
+
+
+{{ block content }}
+
+    <div class="text-center">
+        <div id="vimeo-player"></div>
+    </div>
+
+    <div class="text-center mt-5">
+        {{ next_button }}
+        <br>
+        <i>(This button becomes active after you watch the video.)</i>
+    </div>
+
+{{ endblock }}
+
+{{ block scripts }}
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script>
+        // Use jQuery's document ready function
+        $(function () {
+            const $nextButton = $('.otree-btn-next');
+            const $hiddenInput = $('#id_video_watched');
+            $nextButton.prop('disabled', true);
+
+            // --- Vimeo Player Logic ---
+            const options = {
+                id: '{{ vimeo_id }}',
+                width: 800,
+                loop: false
+            };
+            const player = new Vimeo.Player('vimeo-player', options);
+            const requiredWatchPercentage = 0.95; // Require 95% of video to be watched
+            let videoDuration = 0;
+            let maxWatchedTime = 0;
+            let lastPlayTime = 0;
+            let lastWallTime = null;
+            let snapBackPromise = null;
+
+            player.getDuration().then(function(duration) {
+                videoDuration = duration;
+            }).catch(function(error) {
+                console.error('Error getting video duration: ', error);
+            });
+
+            function enforceMaxTime(currentSeconds) {
+                if (currentSeconds > maxWatchedTime + 0.75) {
+                    lastWallTime = null;
+                    if (!snapBackPromise) {
+                        snapBackPromise = player.setCurrentTime(maxWatchedTime)
+                            .catch(function(error) {
+                                console.error('Error resetting video time: ', error);
+                            })
+                            .finally(function() {
+                                snapBackPromise = null;
+                                // Re-verify position in case the user dragged again while setCurrentTime was in flight
+                                player.getCurrentTime().then(function(sec) {
+                                    if (sec > maxWatchedTime + 0.75) {
+                                        enforceMaxTime(sec);
+                                    }
+                                }).catch(function() {});
+                            });
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            function checkWatchProgress() {
+                if (videoDuration === 0) return; // safeguard against division by zero
+                player.getPlayed().then(function(played) {
+                    let totalPlayed = 0;
+                    for (let i = 0; i < played.length; i++) {
+                        totalPlayed += played[i][1] - played[i][0];
+                    }
+
+                    const watchedPercentage = totalPlayed / videoDuration;
+                    if (watchedPercentage >= requiredWatchPercentage) {
+                        enableNext();
+                    }
+                }).catch(function(error) {
+                    console.error('Error getting played time: ', error);
+                });
+            }
+
+            player.on('timeupdate', function(data) {
+                if (enforceMaxTime(data.seconds)) {
+                    return;
+                }
+
+                const now = performance.now();
+                if (lastWallTime !== null) {
+                    const wallDelta = (now - lastWallTime) / 1000;
+                    const videoDelta = data.seconds - lastPlayTime;
+                    // Only advance maxWatchedTime at real wall-clock playback rate
+                    if (videoDelta > 0 && videoDelta <= 1.0 && wallDelta > 0) {
+                        const allowedIncrease = Math.min(videoDelta, wallDelta * 1.2);
+                        if (data.seconds > maxWatchedTime) {
+                            maxWatchedTime = Math.min(data.seconds, maxWatchedTime + allowedIncrease);
+                        }
+                    }
+                }
+                lastPlayTime = data.seconds;
+                lastWallTime = now;
+
+                checkWatchProgress();
+            });
+
+            player.on('pause', function() {
+                lastWallTime = null;
+            });
+
+            // Prevent dragging the scrubber forward past what has already been watched
+            player.on('seeking', function(data) {
+                enforceMaxTime(data.seconds);
+            });
+
+            player.on('seeked', function(data) {
+                lastWallTime = null;
+                enforceMaxTime(data.seconds);
+            });
+
+            // Prevent increasing playback speed above 1x
+            player.on('playbackratechange', function(data) {
+                if (data.playbackRate > 1) {
+                    player.setPlaybackRate(1).catch(function(error) {
+                        console.error('Error resetting playback rate: ', error);
+                    });
+                }
+            });
+
+            // Verify watch percentage when the video ends instead of enabling unconditionally
+            player.on('ended', function() {
+                if (!enforceMaxTime(videoDuration)) {
+                    checkWatchProgress();
+                }
+            });
+
+            // --- Function to enable the next button ---
+            function enableNext() {
+                $hiddenInput.val('True'); // Use .val() to set the value
+                $nextButton.prop('disabled', false); // Use .prop() to change the disabled property
+            }
+
+            // --- Developer Bypass Key Sequence Logic (jQuery version with logging) ---
+            let ctrlPressed = false;
+            let vPressed = false;
+
+            // Use jQuery's .on() for event handling
+            $(document).on('keydown', function(event) {
+                console.log("Key pressed:", event.key); // LOG 2: Shows every key press
+
+                if (event.key === 'Control') {
+                    ctrlPressed = true;
+                    console.log("Control key is down."); // LOG 3: Confirms Control key is detected
+                }
+
+                // Check for Ctrl + v
+                if (ctrlPressed && event.key.toLowerCase() === 'v') {
+                    vPressed = true;
+                    console.log("'v' key detected while Control is down."); // LOG 4: Confirms 'v' is detected
+                    event.preventDefault();
+                }
+
+                // Check for Ctrl + b (after Ctrl + v)
+                if (ctrlPressed && event.key.toLowerCase() === 'b' && vPressed) {
+                    console.log("'b' key detected, sequence complete."); // LOG 5: Confirms the full sequence
+                    enableNext();
+                    event.preventDefault();
+                }
+            });
+
+            $(document).on('keyup', function(event) {
+                if (event.key === 'Control') {
+                    ctrlPressed = false;
+                    vPressed = false;
+                    console.log("Control key released. Sequence reset.");
+                }
+            });
+        });
+    </script>
+{{ endblock }}
